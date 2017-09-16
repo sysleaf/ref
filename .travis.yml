@@ -1,33 +1,36 @@
+os:
+  - linux
+  - osx
 sudo: false
-
-env:
-  - CXX=g++-4.8
+language: cpp
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
       - g++-4.8
-
-language: node_js
-
-node_js:
-  - "0.10"
-  - "0.12"
-  - "3.2"
-  - "4"
-  - "5"
-  - "6"
-  - "7"
+env:
+  global:
+    - secure: ex71zWcQB8YLaK8LpxDT7yIE+JpeeTIXxraDBggIWcSfsp/h0aXP8fyXGWG5Bc6oTs5zfffPJwwndL7DThIyHDt9dn2ADCryyJQkfevE+NyrKouBExz6jj2aydsPwBBMwq3MldBuu0nC3k34aw0EMkknTui1GqX6abDZZcoqXNqLjK8h4LbwywPffCpfr6n+pV1MDJY2qJ2YQ+13WAwdiWm0h/9u+1CGGsbpN9lx9GJKRHbdKvTKjubkj1iuWSD19dD8WcJPQC2cQzCXHlN/D1e6hcsK57VHYl2QT2ZH5rDuYh6F9gBUGrrHB0oGEQARw61rgg/wYtAZIlqjU6ILS/sTrrGZp3waa0fB4DF310IJvOWebNeB2CWckUj0UunLZtqyuenTn7TS/4uxFpihoAhhXuRwZ1Q3Yea6GUGNgPhooSYJa+IGS/FycrUu0yVHlWeXjpmeOMDIpXgtcHnZw6QF3+oRJAT727S2Ngh2NKJAUgIFHRvEFH9l7ks4mlWAGs3BFF4XJXFOeJObHCOLZciYGsY6NqCd67iWcNkur90esa+Yg8eZ4brrzqADLt70nFZ+BE/pqxwifjoFhEzILvB8RdRKe+0gqUTSzgnG6E3jWWEXF4Qadenx7WRy2Kbvt+mgZk+QrEDB1bTqsXE9pByfnra7+ev/KC4m5JZm0DY=
+  matrix:
+    - TRAVIS_NODE_VERSION="8"
+    - TRAVIS_NODE_VERSION="6.11"
 
 install:
+  - rm -rf ~/.nvm/ && git clone --depth 1 https://github.com/creationix/nvm.git ~/.nvm
+  - source ~/.nvm/nvm.sh
+  - nvm install $TRAVIS_NODE_VERSION
+  - nvm use $TRAVIS_NODE_VERSION
+  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
+  - $CXX --version
   - PATH="`npm bin`:`npm bin -g`:$PATH"
-  # Install dependencies and build
-  - npm install
+  - npm install -g node-pre-gyp-github
+  - npm install -g node-pre-gyp
+  - npm install --build-from-source
+  - node-pre-gyp package
+  - COMMIT_MESSAGE=$(git log --format=%B --no-merges -n 1 | tr -d '\n')
+  - if [[ ${COMMIT_MESSAGE} =~ "publish binary" ]]; then node-pre-gyp-github publish --release; fi;
 
 script:
-  # Output useful info for debugging
   - node --version
   - npm --version
-  # Run tests
-  - npm test
